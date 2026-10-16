@@ -1,0 +1,7 @@
+prompt_tokens,mean_prefill_ms,extra_peak_mb,finite_logits
+32,58.69,23.2,True
+64,62.65,47.0,True
+128,61.86,93.6,True
+256,70.67,187.3,True
+512,154.11,370.9,True
+1024,371.51,741.9,True

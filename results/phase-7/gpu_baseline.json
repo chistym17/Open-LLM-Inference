@@ -1,0 +1,30 @@
+{
+  "gpu": "Tesla T4",
+  "vram_mib": 15360,
+  "compute_capability": "7.5",
+  "pytorch": "2.11.0+cu130",
+  "cuda_available": true,
+  "nvidia_smi_cuda_version": "13.0",
+  "sample_interval_seconds": 1,
+  "sample_count": 10,
+  "idle_summary": {
+    "gpu_util_pct_mean": 0.0,
+    "memory_util_pct_mean": 0.0,
+    "memory_used_mib_mean": 3.0,
+    "memory_total_mib": 15360.0,
+    "power_w_mean": 13.161,
+    "temperature_c_mean": 37.6
+  },
+  "samples": [
+    {"sample": 0, "gpu_util_pct": 0, "memory_util_pct": 0, "memory_used_mib": 3, "memory_total_mib": 15360, "power_w": 13.13, "temperature_c": 37},
+    {"sample": 1, "gpu_util_pct": 0, "memory_util_pct": 0, "memory_used_mib": 3, "memory_total_mib": 15360, "power_w": 13.23, "temperature_c": 37},
+    {"sample": 2, "gpu_util_pct": 0, "memory_util_pct": 0, "memory_used_mib": 3, "memory_total_mib": 15360, "power_w": 13.13, "temperature_c": 37},
+    {"sample": 3, "gpu_util_pct": 0, "memory_util_pct": 0, "memory_used_mib": 3, "memory_total_mib": 15360, "power_w": 13.23, "temperature_c": 37},
+    {"sample": 4, "gpu_util_pct": 0, "memory_util_pct": 0, "memory_used_mib": 3, "memory_total_mib": 15360, "power_w": 13.23, "temperature_c": 38},
+    {"sample": 5, "gpu_util_pct": 0, "memory_util_pct": 0, "memory_used_mib": 3, "memory_total_mib": 15360, "power_w": 13.13, "temperature_c": 38},
+    {"sample": 6, "gpu_util_pct": 0, "memory_util_pct": 0, "memory_used_mib": 3, "memory_total_mib": 15360, "power_w": 13.13, "temperature_c": 38},
+    {"sample": 7, "gpu_util_pct": 0, "memory_util_pct": 0, "memory_used_mib": 3, "memory_total_mib": 15360, "power_w": 13.13, "temperature_c": 38},
+    {"sample": 8, "gpu_util_pct": 0, "memory_util_pct": 0, "memory_used_mib": 3, "memory_total_mib": 15360, "power_w": 13.14, "temperature_c": 38},
+    {"sample": 9, "gpu_util_pct": 0, "memory_util_pct": 0, "memory_used_mib": 3, "memory_total_mib": 15360, "power_w": 13.13, "temperature_c": 38}
+  ]
+}

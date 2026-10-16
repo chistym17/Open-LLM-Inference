@@ -1,0 +1,5 @@
+experiment,input_tokens,output_tokens,prefill_time_s,latency_s,output_tok_s,peak_gpu_memory_gb
+baseline,11,100,0.137490,5.469,18.29,2.891
+context_397,397,100,,1.575,17.15,2.929
+context_760,760,100,,1.697,15.91,2.996
+context_1486,1486,100,,1.618,16.68,3.214

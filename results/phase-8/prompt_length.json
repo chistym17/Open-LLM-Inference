@@ -1,0 +1,53 @@
+{
+  "model": "Qwen/Qwen2.5-1.5B-Instruct",
+  "dtype": "FP16",
+  "attention_implementation": "sdpa",
+  "timed_passes": 3,
+  "warmup_passes": 1,
+  "gpu": "Tesla T4",
+  "pytorch": "2.11.0+cu130",
+  "transformers": "5.18.0",
+  "results": [
+    {
+      "prompt_tokens": 32,
+      "mean_prefill_ms": 58.69,
+      "extra_peak_mb": 23.2,
+      "finite_logits": true
+    },
+    {
+      "prompt_tokens": 64,
+      "mean_prefill_ms": 62.65,
+      "extra_peak_mb": 47.0,
+      "finite_logits": true
+    },
+    {
+      "prompt_tokens": 128,
+      "mean_prefill_ms": 61.86,
+      "extra_peak_mb": 93.6,
+      "finite_logits": true
+    },
+    {
+      "prompt_tokens": 256,
+      "mean_prefill_ms": 70.67,
+      "extra_peak_mb": 187.3,
+      "finite_logits": true
+    },
+    {
+      "prompt_tokens": 512,
+      "mean_prefill_ms": 154.11,
+      "extra_peak_mb": 370.9,
+      "finite_logits": true
+    },
+    {
+      "prompt_tokens": 1024,
+      "mean_prefill_ms": 371.51,
+      "extra_peak_mb": 741.9,
+      "finite_logits": true
+    }
+  ],
+  "notes": [
+    "From 32 to 1,024 tokens, prefill latency increased by about 6.3×.",
+    "Extra peak memory increased by about 32× over the same range.",
+    "Measurements are full model forward passes with use_cache=False, not attention-only."
+  ]
+}

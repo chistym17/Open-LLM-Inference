@@ -1,0 +1,4 @@
+input_tokens,latency_s,output_tok_s,peak_gpu_gb,max_new_tokens,engine
+397,1.575,17.15,2.929,100,transformers_fp16
+760,1.697,15.91,2.996,100,transformers_fp16
+1486,1.618,16.68,3.214,100,transformers_fp16

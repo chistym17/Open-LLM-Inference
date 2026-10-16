@@ -1,0 +1,7 @@
+concurrency,prompt_length_approx,peak_kv_utilization_pct,average_latency_s
+8,500,0.516,2.211
+8,1000,0.645,2.508
+8,2000,0.979,3.431
+32,500,1.506,3.787
+32,1000,1.549,4.897
+32,2000,1.883,6.914

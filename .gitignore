@@ -11,7 +11,7 @@ venv/
 
 *.egg-info/
 
-results/*
-!results/.gitkeep
+# Keep measured benchmark artifacts in V1; ignore local scratch only.
+results/**/__pycache__/
 
 .DS_Store

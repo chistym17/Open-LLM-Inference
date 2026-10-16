@@ -1,0 +1,5 @@
+batch_size,mean_batch_latency_s,aggregate_output_tok_s,approx_per_sequence_tok_s,peak_allocated_gib
+1,4.075,12.269,12.269,2.896
+2,3.066,32.617,16.308,2.896
+4,1.904,105.060,26.265,2.901
+8,1.939,206.318,25.790,2.918

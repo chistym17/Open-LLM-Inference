@@ -1,0 +1,103 @@
+{
+  "source": "docs/01_raw_transformers.ipynb cell 33 (experiments/04_concurrency/run.py on Colab)",
+  "model": "Qwen/Qwen2.5-1.5B-Instruct",
+  "engine": "vLLM",
+  "max_new_tokens": 100,
+  "notes": [
+    "Metrics match the Colab printed table and experiments/04_concurrency/README.md.",
+    "total_output_tokens is inferred as concurrency * max_new_tokens (100); other fields are measured.",
+    "kv_cache_after is 0.0 because it was sampled after requests completed."
+  ],
+  "results": [
+    {
+      "concurrency": 1,
+      "completed_requests": 1,
+      "wall_time_s": 3.188,
+      "requests_per_s": 0.31,
+      "total_output_tokens": 100,
+      "aggregate_output_tok_s": 31.37,
+      "latency_mean_s": 3.187,
+      "latency_p50_s": 3.187,
+      "latency_p95_s": 3.187,
+      "kv_cache_before": 0.0,
+      "kv_cache_after": 0.0,
+      "running_before": 0.0,
+      "waiting_before": 0.0
+    },
+    {
+      "concurrency": 2,
+      "completed_requests": 2,
+      "wall_time_s": 1.517,
+      "requests_per_s": 1.32,
+      "total_output_tokens": 200,
+      "aggregate_output_tok_s": 131.82,
+      "latency_mean_s": 1.508,
+      "latency_p50_s": 1.508,
+      "latency_p95_s": 1.512,
+      "kv_cache_before": 0.0,
+      "kv_cache_after": 0.0,
+      "running_before": 0.0,
+      "waiting_before": 0.0
+    },
+    {
+      "concurrency": 4,
+      "completed_requests": 4,
+      "wall_time_s": 1.526,
+      "requests_per_s": 2.62,
+      "total_output_tokens": 400,
+      "aggregate_output_tok_s": 262.08,
+      "latency_mean_s": 1.519,
+      "latency_p50_s": 1.523,
+      "latency_p95_s": 1.523,
+      "kv_cache_before": 0.0,
+      "kv_cache_after": 0.0,
+      "running_before": 0.0,
+      "waiting_before": 0.0
+    },
+    {
+      "concurrency": 8,
+      "completed_requests": 8,
+      "wall_time_s": 1.592,
+      "requests_per_s": 5.03,
+      "total_output_tokens": 800,
+      "aggregate_output_tok_s": 502.62,
+      "latency_mean_s": 1.583,
+      "latency_p50_s": 1.584,
+      "latency_p95_s": 1.586,
+      "kv_cache_before": 0.0,
+      "kv_cache_after": 0.0,
+      "running_before": 0.0,
+      "waiting_before": 0.0
+    },
+    {
+      "concurrency": 16,
+      "completed_requests": 16,
+      "wall_time_s": 1.778,
+      "requests_per_s": 9.0,
+      "total_output_tokens": 1600,
+      "aggregate_output_tok_s": 899.9,
+      "latency_mean_s": 1.733,
+      "latency_p50_s": 1.733,
+      "latency_p95_s": 1.745,
+      "kv_cache_before": 0.0,
+      "kv_cache_after": 0.0,
+      "running_before": 0.0,
+      "waiting_before": 0.0
+    },
+    {
+      "concurrency": 32,
+      "completed_requests": 32,
+      "wall_time_s": 2.235,
+      "requests_per_s": 14.32,
+      "total_output_tokens": 3200,
+      "aggregate_output_tok_s": 1431.73,
+      "latency_mean_s": 2.192,
+      "latency_p50_s": 2.191,
+      "latency_p95_s": 2.202,
+      "kv_cache_before": 0.0,
+      "kv_cache_after": 0.0,
+      "running_before": 0.0,
+      "waiting_before": 0.0
+    }
+  ]
+}

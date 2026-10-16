@@ -1,0 +1,76 @@
+{
+  "model": "Qwen/Qwen2.5-1.5B-Instruct",
+  "gpu": "Tesla T4",
+  "sources": {
+    "transformers_context_length.csv": "docs/01_raw_transformers.ipynb cell 18",
+    "vllm_kv_context.csv": "experiments/05_context_kv/README.md measured tables"
+  },
+  "transformers_context_length": [
+    {
+      "input_tokens": 397,
+      "latency_s": 1.575,
+      "output_tok_s": 17.15,
+      "peak_gpu_gb": 2.929,
+      "max_new_tokens": 100,
+      "engine": "transformers_fp16"
+    },
+    {
+      "input_tokens": 760,
+      "latency_s": 1.697,
+      "output_tok_s": 15.91,
+      "peak_gpu_gb": 2.996,
+      "max_new_tokens": 100,
+      "engine": "transformers_fp16"
+    },
+    {
+      "input_tokens": 1486,
+      "latency_s": 1.618,
+      "output_tok_s": 16.68,
+      "peak_gpu_gb": 3.214,
+      "max_new_tokens": 100,
+      "engine": "transformers_fp16"
+    }
+  ],
+  "vllm_kv_context": [
+    {
+      "concurrency": 8,
+      "prompt_length_approx": 500,
+      "peak_kv_utilization_pct": 0.516,
+      "average_latency_s": 2.211
+    },
+    {
+      "concurrency": 8,
+      "prompt_length_approx": 1000,
+      "peak_kv_utilization_pct": 0.645,
+      "average_latency_s": 2.508
+    },
+    {
+      "concurrency": 8,
+      "prompt_length_approx": 2000,
+      "peak_kv_utilization_pct": 0.979,
+      "average_latency_s": 3.431
+    },
+    {
+      "concurrency": 32,
+      "prompt_length_approx": 500,
+      "peak_kv_utilization_pct": 1.506,
+      "average_latency_s": 3.787
+    },
+    {
+      "concurrency": 32,
+      "prompt_length_approx": 1000,
+      "peak_kv_utilization_pct": 1.549,
+      "average_latency_s": 4.897
+    },
+    {
+      "concurrency": 32,
+      "prompt_length_approx": 2000,
+      "peak_kv_utilization_pct": 1.883,
+      "average_latency_s": 6.914
+    }
+  ],
+  "notes": [
+    "Transformers rows are full generate() latency with max_new_tokens=100, not KV-only.",
+    "vLLM KV utilization was measured during active inference (unlike phase-4 post-completion 0% readings)."
+  ]
+}

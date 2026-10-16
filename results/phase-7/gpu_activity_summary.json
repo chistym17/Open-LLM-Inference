@@ -1,0 +1,57 @@
+{
+  "model": "Qwen/Qwen2.5-1.5B-Instruct",
+  "precision": "FP16",
+  "gpu": "Tesla T4",
+  "prompt_tokens": 23,
+  "requests": 8,
+  "max_new_tokens_per_request": 200,
+  "sample_interval_seconds": 0.5,
+  "gpu_samples_collected": 153,
+  "gpu_summary": {
+    "gpu_util_pct": {
+      "mean": 38.34,
+      "median": 41.0,
+      "min": 0.0,
+      "max": 56.0
+    },
+    "memory_util_pct": {
+      "mean": 31.93,
+      "median": 31.0,
+      "min": 0.0,
+      "max": 49.0
+    },
+    "memory_used_mib": {
+      "mean": 3143.0,
+      "median": 3143.0,
+      "min": 3143.0,
+      "max": 3143.0
+    },
+    "power_w": {
+      "mean": 48.03,
+      "median": 40.02,
+      "min": 28.55,
+      "max": 72.83
+    },
+    "temperature_c": {
+      "mean": 62.71,
+      "median": 59.0,
+      "min": 54.0,
+      "max": 75.0
+    }
+  },
+  "request_results": [
+    {"request": 1, "latency_s": 18.798296, "output_tokens": 200, "output_tok_s": 10.639262},
+    {"request": 2, "latency_s": 15.290109, "output_tokens": 200, "output_tok_s": 13.080352},
+    {"request": 3, "latency_s": 14.109769, "output_tokens": 200, "output_tok_s": 14.174576},
+    {"request": 4, "latency_s": 7.789385, "output_tokens": 200, "output_tok_s": 25.675970},
+    {"request": 5, "latency_s": 7.124299, "output_tokens": 200, "output_tok_s": 28.072939},
+    {"request": 6, "latency_s": 7.790374, "output_tokens": 200, "output_tok_s": 25.672707},
+    {"request": 7, "latency_s": 7.682966, "output_tokens": 200, "output_tok_s": 26.031613},
+    {"request": 8, "latency_s": 7.169863, "output_tokens": 200, "output_tok_s": 27.894536}
+  ],
+  "notes": [
+    "The raw 153-sample time series was not retained in the pasted output.",
+    "GPU utilization is sampled activity, not a direct memory-bandwidth measurement.",
+    "The first three requests were slower than the last five; the cause was not isolated."
+  ]
+}

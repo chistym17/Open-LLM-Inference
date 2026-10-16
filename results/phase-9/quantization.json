@@ -1,0 +1,34 @@
+{
+  "model": "Qwen/Qwen2.5-1.5B-Instruct",
+  "gpu": "Tesla T4",
+  "fp16": {
+    "attention": "sdpa",
+    "model_footprint_gib": 2.875,
+    "peak_allocated_gib": 2.890,
+    "mean_generation_latency_s": 2.291
+  },
+  "nf4": {
+    "quantization": "bitsandbytes NF4",
+    "double_quant": true,
+    "compute_dtype": "FP16",
+    "model_footprint_gib": 1.045,
+    "peak_allocated_gib": 1.089,
+    "mean_generation_latency_s": 5.136
+  },
+  "decoding": {
+    "strategy": "greedy",
+    "max_new_tokens": 64,
+    "timed_runs": 3,
+    "warmup": true
+  },
+  "deltas": {
+    "model_footprint_reduction_pct": 63.7,
+    "peak_allocated_reduction_pct": 62.3,
+    "model_footprint_saved_gib": 1.83,
+    "latency_slowdown_factor": 2.24
+  },
+  "notes": [
+    "Quantization reduced memory but increased generation latency on this Tesla T4 setup.",
+    "Output quality was only a qualitative smoke test, not a rigorous evaluation."
+  ]
+}
