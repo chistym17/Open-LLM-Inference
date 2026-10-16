@@ -64,9 +64,9 @@ With FP16 + SDPA forward passes (`use_cache=False`):
 | 256 | 70.67 | 187.3 |
 | 1024 | 371.51 | 741.9 |
 
-From 32 → 1,024 tokens: latency ≈ **6.3×**, extra peak memory ≈ **32×**.
+From 32 → 1,024 tokens: mean prefill latency ≈ **6.3×** (58.69 → 371.51 ms), and *additional* peak memory ≈ **32×** (23.2 → 741.9 MB).
 
-These are **full forward-pass** costs, not attention-only.
+These are **full-model forward-pass** costs (`use_cache=False`), not an isolated attention-kernel benchmark. Peak memory includes other allocations (activations, vocabulary-sized logits, etc.).
 
 ### 4. Explicit Transformers batching improves aggregate throughput
 
@@ -96,7 +96,7 @@ Early requests during GPU sampling were much slower than later ones. After warm-
 
 ### 7. GPU utilization ≠ memory bandwidth proof
 
-During sustained Transformers inference, mean GPU util was ~38%, memory used ~3.1 GiB, power ~48 W. Utilization shows activity; it does not by itself prove a compute- or bandwidth-bound bottleneck. Flash SDPA was unavailable on T4 (CC 7.5).
+During sustained Transformers inference, mean GPU util was ~38%, memory used ~3.1 GiB, power ~48 W. Utilization shows activity; it does not by itself prove a compute- or bandwidth-bound bottleneck. The tested Flash SDPA kernel was unsupported on the T4 (compute capability 7.5) in this environment; that does not claim every FlashAttention implementation is unavailable on all T4 setups.
 
 ### 8. Scheduler pressure ≠ failure
 
@@ -114,12 +114,14 @@ Do **not** merge these into one fake leaderboard without caveats:
 
 ## Recommended Configurations (this model + T4)
 
+These are baselines from the measured workloads—not universal rules. Latency and throughput depend on prompt length, output length, concurrency, and measurement boundary.
+
 | Goal | Prefer | Why |
 | ---- | ------ | --- |
-| Lowest single-request Transformers latency | FP16 + SDPA | Faster than NF4 in Phase 9 |
-| Lowest model memory | 4-bit NF4 | ~1.05 GiB footprint vs ~2.88 GiB |
-| Highest aggregate serving throughput | vLLM + higher concurrency | ~45× tok/s from C=1→32 |
-| Studying prefill / prompt cost | Phase 8 prompt sweep | Clear latency + memory vs length |
+| Transformers latency-oriented baseline | FP16 + SDPA | Faster than NF4 in Phase 9 for the tested generate() workload |
+| Memory-constrained baseline | 4-bit NF4 | ~1.05 GiB footprint vs ~2.88 GiB |
+| Higher aggregate serving throughput (this benchmark) | vLLM with higher concurrency | Aggregate tok/s rose ~45.6× from C=1→32 |
+| Studying prefill / prompt cost | Phase 8 prompt sweep | Full forward-pass latency + *additional* peak memory vs length |
 | Studying batching without a server | Transformers explicit batch | Clear aggregate tok/s gains |
 
 ## Reproduction (flagship paths)
@@ -156,8 +158,8 @@ This project demonstrates open-weight LLM inference as a **systems** problem: pr
 
 For this V1 portfolio on a Tesla T4 with Qwen2.5-1.5B:
 
-* Use **vLLM + concurrency** when aggregate throughput matters.
-* Use **FP16** when Transformers latency matters.
+* In this benchmark, **vLLM achieved higher aggregate throughput as concurrency increased**.
+* **FP16 + SDPA** is the Transformers latency-oriented baseline here (faster than NF4 in Phase 9; still workload-dependent).
 * Use **4-bit NF4** when memory is the binding constraint and slower generation is acceptable.
 * Always separate **warm-up** from steady-state numbers, and treat utilization metrics as supporting evidence—not proof of a specific bottleneck.
 

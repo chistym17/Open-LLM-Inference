@@ -26,10 +26,11 @@
     }
   ],
   "recommendations": {
-    "lower_transformers_latency": "FP16 + SDPA",
-    "lower_memory": "4-bit NF4",
-    "higher_serving_throughput": "vLLM with higher concurrency"
+    "transformers_latency_baseline": "FP16 + SDPA (workload-dependent; faster than NF4 in Phase 9)",
+    "memory_constrained_baseline": "4-bit NF4",
+    "serving_throughput_this_benchmark": "vLLM achieved higher aggregate throughput as concurrency increased"
   },
+  "throughput_definition": "aggregate = total generated tokens / wall time, unless noted",
   "known_gaps": [
     "No archived phase-2 CSV",
     "No archived phase-3 apples-to-apples CSV",

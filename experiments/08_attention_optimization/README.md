@@ -28,7 +28,7 @@ Each measurement used one warmup pass followed by three timed forward passes. Al
 
 ## Backend investigation
 
-- Flash SDPA was unavailable for the tested operation because the T4 uses compute capability 7.5, while the installed PyTorch Flash SDPA kernel required a newer architecture.
+- The tested Flash SDPA kernel was unsupported on the T4 (compute capability 7.5) in this environment; the installed PyTorch Flash SDPA path required a newer architecture. This does not claim every FlashAttention implementation is unavailable on all T4 setups.
 - Memory-efficient and math SDPA calls both returned finite outputs in the isolated test.
 - The isolated timing comparison favored the memory-efficient request, but backend dispatch was not conclusively verified. These timings are not treated as a confirmed kernel performance comparison.
 - FP16 eager attention produced NaNs in the initial model comparison. Eager FP16 was therefore not used as a correctness reference.
