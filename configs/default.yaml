@@ -1,0 +1,23 @@
+model:
+  id: Qwen/Qwen2.5-1.5B-Instruct
+  dtype: float16
+
+hardware:
+  gpu: Tesla T4
+  compute_capability: "7.5"
+  vram_mib: 15360
+
+generation:
+  max_new_tokens: 100
+  temperature: 0
+  do_sample: false
+
+vllm:
+  host: 127.0.0.1
+  port: 8000
+  gpu_memory_utilization: 0.8
+  max_model_len: 4096
+
+benchmark:
+  warmup_runs: 1
+  measured_runs: 5

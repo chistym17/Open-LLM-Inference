@@ -1,14 +1,3 @@
-Now finish Phase 3 documentation. We already have the code; don't add more infrastructure.
-
-## 1. Create the Phase 3 README
-
-```bash
-nano experiments/03_vllm/README.md
-```
-
-Paste:
-
-````markdown
 # Phase 3 — vLLM Integration
 
 ## Objective
@@ -25,7 +14,7 @@ The benchmark layer remains engine-independent.
 Workload → Runner ──┤
                     │
                     └── VLLMEngine → vLLM Server
-````
+```
 
 ## vLLM Configuration
 
@@ -91,18 +80,21 @@ For this reason, latency should not be treated as a perfectly apples-to-apples c
 
 Output throughput is the primary comparison metric in this phase.
 
-## Expected Result
+## Status / Limitation
 
-The experiment should establish how much throughput improvement the optimized inference engine provides over raw Transformers inference for the same model and workload.
+Phase 3 established the engine integration and measurement boundary, but a finalized apples-to-apples `results/phase-3/` CSV was not archived from the Colab runs.
 
-Earlier exploratory vLLM testing showed substantially higher single-request generation throughput than the raw Transformers baseline, but the final Phase 3 numbers must come from the standardized benchmark.
+Later phases provide stronger comparative evidence:
+
+* Phase 4 — vLLM concurrency scaling
+* Phase 1 / 7 — Transformers single-request baselines
 
 ## Running
 
 Start the vLLM server first, then run:
 
 ```bash
-python experiments/03_vllm/run.py
+PYTHONPATH=src python experiments/03_vllm/run.py
 ```
 
 Results are written to:
@@ -111,5 +103,3 @@ Results are written to:
 results/phase-3/vllm-baseline.csv
 results/phase-3/vllm-baseline.json
 ```
-
-

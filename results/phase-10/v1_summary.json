@@ -1,0 +1,38 @@
+{
+  "release": "v1.0",
+  "model": "Qwen/Qwen2.5-1.5B-Instruct",
+  "gpu": "Tesla T4",
+  "report": "experiments/10_v1_report/README.md",
+  "headline_findings": [
+    {
+      "id": "concurrency",
+      "summary": "vLLM aggregate throughput ~31 to ~1432 tok/s from concurrency 1 to 32 (~45.6x).",
+      "source": "results/phase-4/concurrency.csv"
+    },
+    {
+      "id": "prefill_scaling",
+      "summary": "Prefill latency ~6.3x and extra peak memory ~32x from 32 to 1024 prompt tokens.",
+      "source": "results/phase-8/prompt_length.csv"
+    },
+    {
+      "id": "quantization",
+      "summary": "NF4 reduced model footprint ~63.7% but generation was ~2.24x slower than FP16.",
+      "source": "results/phase-9/quantization.csv"
+    },
+    {
+      "id": "batching",
+      "summary": "Transformers explicit batch 1→8 raised aggregate tok/s from ~12 to ~206.",
+      "source": "results/phase-7/batch_scaling.csv"
+    }
+  ],
+  "recommendations": {
+    "lower_transformers_latency": "FP16 + SDPA",
+    "lower_memory": "4-bit NF4",
+    "higher_serving_throughput": "vLLM with higher concurrency"
+  },
+  "known_gaps": [
+    "No archived phase-2 CSV",
+    "No archived phase-3 apples-to-apples CSV",
+    "Phase-6 Prometheus gauge samples unreliable"
+  ]
+}

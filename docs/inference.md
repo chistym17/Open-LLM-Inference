@@ -1,14 +1,3 @@
-Good. Next: `docs/inference.md`.
-
-This is the **core technical explanation** for Phase 1—not a tutorial, just the concepts needed to understand our measurements.
-
-```bash
-nano docs/inference.md
-```
-
-Paste:
-
-````markdown
 # LLM Inference
 
 ## Autoregressive Generation
@@ -19,7 +8,7 @@ For an input sequence:
 
 ```text
 x1, x2, ..., xn
-````
+```
 
 the model produces logits over the vocabulary. The next token is selected from those logits and appended to the sequence.
 
@@ -208,5 +197,3 @@ This provides the baseline for later experiments involving:
 * KV-cache management
 * scheduling
 * quantization
-
-````
