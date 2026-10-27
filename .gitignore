@@ -3,6 +3,7 @@ __pycache__/
 
 venv/
 .env
+.env.local
 
 .ipynb_checkpoints/
 
@@ -11,7 +12,9 @@ venv/
 
 *.egg-info/
 
-# Keep measured benchmark artifacts in V1; ignore local scratch only.
+# Keep measured V1 artifacts tracked; V2 raw results stay local.
 results/**/__pycache__/
+results/v2/**
+!results/v2/**/.gitkeep
 
 .DS_Store
