@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import time
+from dataclasses import dataclass
 from typing import Any
 
 import httpx
@@ -12,6 +14,12 @@ class UpstreamError(Exception):
         self.status_code = status_code
         self.detail = detail
         super().__init__(detail)
+
+
+@dataclass(frozen=True)
+class UpstreamResult:
+    data: dict[str, Any]
+    duration_ms: float
 
 
 class VLLMClient:
@@ -33,17 +41,19 @@ class VLLMClient:
         except httpx.RequestError as exc:
             raise UpstreamError(503, f"upstream unreachable: {exc}") from exc
 
-    async def chat_completions(self, payload: dict[str, Any]) -> dict[str, Any]:
+    async def chat_completions(self, payload: dict[str, Any]) -> UpstreamResult:
+        t0 = time.perf_counter()
         try:
             response = await self._client.post("/v1/chat/completions", json=payload)
         except httpx.TimeoutException as exc:
             raise UpstreamError(504, "upstream timeout") from exc
         except httpx.RequestError as exc:
             raise UpstreamError(503, f"upstream unreachable: {exc}") from exc
+        duration_ms = (time.perf_counter() - t0) * 1000
 
         if response.status_code >= 400:
             raise UpstreamError(
                 response.status_code,
                 response.text[:500] or response.reason_phrase,
             )
-        return response.json()
+        return UpstreamResult(data=response.json(), duration_ms=round(duration_ms, 1))

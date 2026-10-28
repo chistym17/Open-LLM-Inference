@@ -26,8 +26,12 @@ class ChatRequest(BaseModel):
 
 
 class ChatResponse(BaseModel):
+    request_id: str
     id: str
     model: str
     content: str
     usage: dict[str, Any]
-    latency_ms: float
+    gateway_ms: float
+    upstream_ms: float
+    prompt_tokens: int | None = None
+    completion_tokens: int | None = None
