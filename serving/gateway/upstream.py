@@ -42,9 +42,10 @@ class VLLMClient:
             raise UpstreamError(503, f"upstream unreachable: {exc}") from exc
 
     async def chat_completions(self, payload: dict[str, Any]) -> UpstreamResult:
+        body = {**payload, "stream": False}
         t0 = time.perf_counter()
         try:
-            response = await self._client.post("/v1/chat/completions", json=payload)
+            response = await self._client.post("/v1/chat/completions", json=body)
         except httpx.TimeoutException as exc:
             raise UpstreamError(504, "upstream timeout") from exc
         except httpx.RequestError as exc:
@@ -57,3 +58,39 @@ class VLLMClient:
                 response.text[:500] or response.reason_phrase,
             )
         return UpstreamResult(data=response.json(), duration_ms=round(duration_ms, 1))
+
+    async def stream_chat_completions(
+        self, payload: dict[str, Any]
+    ) -> tuple[httpx.Response, float]:
+        """Open an upstream SSE stream. Caller must aclose the response."""
+        body = {**payload, "stream": True}
+        t0 = time.perf_counter()
+        timeout = httpx.Timeout(
+            connect=30.0,
+            read=self.settings.upstream_timeout_s,
+            write=30.0,
+            pool=30.0,
+        )
+        try:
+            request = self._client.build_request(
+                "POST",
+                "/v1/chat/completions",
+                json=body,
+                headers={
+                    "Accept": "text/event-stream",
+                    "Content-Type": "application/json",
+                },
+                timeout=timeout,
+            )
+            response = await self._client.send(request, stream=True)
+        except httpx.TimeoutException as exc:
+            raise UpstreamError(504, "upstream timeout") from exc
+        except httpx.RequestError as exc:
+            raise UpstreamError(503, f"upstream unreachable: {exc}") from exc
+
+        open_ms = round((time.perf_counter() - t0) * 1000, 1)
+        if response.status_code >= 400:
+            detail = (await response.aread())[:500].decode(errors="replace")
+            await response.aclose()
+            raise UpstreamError(response.status_code, detail or response.reason_phrase)
+        return response, open_ms

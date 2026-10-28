@@ -15,6 +15,7 @@ class ChatRequest(BaseModel):
     max_tokens: int | None = None
     temperature: float = 0.0
     model: str | None = None
+    stream: bool = False
 
     @field_validator("messages")
     @classmethod

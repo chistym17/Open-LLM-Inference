@@ -4,7 +4,7 @@
 serving/
   modal/vllm_server.py   # Modal T4 + vLLM
   gateway/               # FastAPI app-facing service
-  clients/               # smoke + latency benchmark
+  clients/               # smoke + latency + streaming benchmarks
   requirements.txt
 experiments/v2/          # phase writeups (committed)
 results/v2/              # raw measurements (gitignored)
@@ -30,13 +30,22 @@ python serving/clients/smoke_test.py
 
 ## Stage 2 — instrumentation
 
-Warm Modal first (avoid cold-start 503), keep uvicorn running, then:
+Warm Modal first, keep uvicorn running:
 
 ```bash
 python -m serving.clients.benchmark_latency --warmup 2 --runs 10 --max-tokens 32
 ```
 
-Protocol: warmup **both** paths, then **interleaved** measured pairs (direct, gateway, …).  
-Writes `results/v2/phase-2/latency_compare.json`. Update `experiments/v2/02_instrumentation/README.md` with the new p50/p95.
+Writes `results/v2/phase-2/latency_compare.json`.
+
+## Stage 3 — streaming
+
+Warm Modal + gateway, then:
+
+```bash
+python -m serving.clients.benchmark_streaming --warmup 2 --runs 8 --max-tokens 32
+```
+
+Writes `results/v2/phase-3/streaming_compare.json`. Update `experiments/v2/03_streaming/README.md` with TTFT/total p50/p95.
 
 Do not commit `.env`, tokens, endpoint URLs, or `results/v2/`.
