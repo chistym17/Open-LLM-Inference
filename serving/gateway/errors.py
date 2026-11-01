@@ -20,3 +20,11 @@ def map_upstream_error(exc: UpstreamError) -> HTTPException:
         detail="upstream request failed",
         headers={"X-Error-Class": error_class},
     )
+
+
+def request_deadline_error() -> HTTPException:
+    return HTTPException(
+        status_code=504,
+        detail="request deadline exceeded",
+        headers={"X-Error-Class": "request_deadline"},
+    )

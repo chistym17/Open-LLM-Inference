@@ -24,12 +24,12 @@ from serving.load.workload import build_prompt, chat_payload
 
 ROOT = Path(__file__).resolve().parents[2]
 load_dotenv(ROOT / ".env")
-OUT = ROOT / "results" / "v2" / "phase-4"
+DEFAULT_OUT = ROOT / "results" / "v2" / "phase-4"
 DEFAULT_GATEWAY = os.environ.get("GATEWAY_URL", "http://127.0.0.1:8081").rstrip("/")
 
 
 def _parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="Stage 4 gateway load harness")
+    parser = argparse.ArgumentParser(description="Stage 4/5 gateway load harness")
     parser.add_argument("--mode", choices=["closed", "open"], required=True)
     parser.add_argument("--gateway", default=DEFAULT_GATEWAY)
     parser.add_argument("--concurrency", type=int, default=4, help="closed-loop workers")
@@ -46,6 +46,11 @@ def _parse_args() -> argparse.Namespace:
     parser.add_argument("--stream", action="store_true")
     parser.add_argument("--timeout-s", type=float, default=120.0)
     parser.add_argument("--out-name", default="", help="optional filename stem")
+    parser.add_argument(
+        "--out-dir",
+        default=str(DEFAULT_OUT),
+        help="directory for JSON results (default: results/v2/phase-4)",
+    )
     return parser.parse_args()
 
 
@@ -141,7 +146,8 @@ def main() -> int:
         print("rps must be > 0", file=sys.stderr)
         return 2
 
-    OUT.mkdir(parents=True, exist_ok=True)
+    out_dir = Path(args.out_dir)
+    out_dir.mkdir(parents=True, exist_ok=True)
     try:
         report = asyncio.run(_amain(args))
     except Exception as exc:  # noqa: BLE001
@@ -156,7 +162,7 @@ def main() -> int:
             stem = f"open_rps{args.rps:g}_n{args.requests}"
         if args.stream:
             stem += "_stream"
-    out_path = OUT / f"{stem}.json"
+    out_path = out_dir / f"{stem}.json"
     out_path.write_text(json.dumps(report, indent=2) + "\n")
     print(json.dumps({"wrote": str(out_path), "summary": report["summary"]}, indent=2))
     return 0

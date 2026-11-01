@@ -18,6 +18,9 @@ class Settings:
     max_input_chars: int
     max_tokens: int
     upstream_timeout_s: float
+    request_deadline_s: float
+    max_in_flight: int
+    admission_retry_after_s: int
 
     @classmethod
     def from_env(cls) -> Settings:
@@ -35,8 +38,18 @@ class Settings:
             ),
             max_input_chars=int(os.environ.get("GATEWAY_MAX_INPUT_CHARS", "8000")),
             max_tokens=int(os.environ.get("GATEWAY_MAX_TOKENS", "256")),
+            # FastAPI → vLLM hop timeout (not overall request lifetime).
             upstream_timeout_s=float(
                 os.environ.get("GATEWAY_UPSTREAM_TIMEOUT_S", "120")
+            ),
+            # Overall request wall clock from chat handler entry. <=0 disables.
+            request_deadline_s=float(
+                os.environ.get("GATEWAY_REQUEST_DEADLINE_S", "0")
+            ),
+            # <=0 disables admission (baseline). Phase 5 locked default: 6.
+            max_in_flight=int(os.environ.get("GATEWAY_MAX_IN_FLIGHT", "6")),
+            admission_retry_after_s=int(
+                os.environ.get("GATEWAY_ADMISSION_RETRY_AFTER_S", "1")
             ),
         )
 

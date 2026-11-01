@@ -25,6 +25,7 @@ class UpstreamResult:
 class VLLMClient:
     def __init__(self, settings: Settings) -> None:
         self.settings = settings
+        # Default timeout is a fallback; per-call timeouts override.
         self._client = httpx.AsyncClient(
             base_url=settings.vllm_base_url,
             headers={"Authorization": f"Bearer {settings.modal_proxy_token}"},
@@ -36,16 +37,31 @@ class VLLMClient:
 
     async def health(self) -> tuple[int, str]:
         try:
-            response = await self._client.get("/health")
+            response = await self._client.get("/health", timeout=30.0)
             return response.status_code, response.text
         except httpx.RequestError as exc:
             raise UpstreamError(503, f"upstream unreachable: {exc}") from exc
 
-    async def chat_completions(self, payload: dict[str, Any]) -> UpstreamResult:
+    def _timeout(self, timeout_s: float | None) -> httpx.Timeout:
+        total = (
+            self.settings.upstream_timeout_s if timeout_s is None else float(timeout_s)
+        )
+        return httpx.Timeout(connect=30.0, read=total, write=30.0, pool=30.0)
+
+    async def chat_completions(
+        self,
+        payload: dict[str, Any],
+        *,
+        timeout_s: float | None = None,
+    ) -> UpstreamResult:
         body = {**payload, "stream": False}
         t0 = time.perf_counter()
         try:
-            response = await self._client.post("/v1/chat/completions", json=body)
+            response = await self._client.post(
+                "/v1/chat/completions",
+                json=body,
+                timeout=self._timeout(timeout_s),
+            )
         except httpx.TimeoutException as exc:
             raise UpstreamError(504, "upstream timeout") from exc
         except httpx.RequestError as exc:
@@ -60,17 +76,14 @@ class VLLMClient:
         return UpstreamResult(data=response.json(), duration_ms=round(duration_ms, 1))
 
     async def stream_chat_completions(
-        self, payload: dict[str, Any]
+        self,
+        payload: dict[str, Any],
+        *,
+        timeout_s: float | None = None,
     ) -> tuple[httpx.Response, float]:
         """Open an upstream SSE stream. Caller must aclose the response."""
         body = {**payload, "stream": True}
         t0 = time.perf_counter()
-        timeout = httpx.Timeout(
-            connect=30.0,
-            read=self.settings.upstream_timeout_s,
-            write=30.0,
-            pool=30.0,
-        )
         try:
             request = self._client.build_request(
                 "POST",
@@ -80,7 +93,7 @@ class VLLMClient:
                     "Accept": "text/event-stream",
                     "Content-Type": "application/json",
                 },
-                timeout=timeout,
+                timeout=self._timeout(timeout_s),
             )
             response = await self._client.send(request, stream=True)
         except httpx.TimeoutException as exc:
