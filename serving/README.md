@@ -80,4 +80,30 @@ python -m serving.clients.resilience_probes --experiment upstream_timeout --max-
 
 Experiments: `upstream_timeout`, `request_deadline`, `client_disconnect`, `gpu_cancel_proxy`, `slot_recovery`. See `experiments/v2/06_timeouts_cancellation/README.md`.
 
+## Stage 7 — observability
+
+`/health/live` does not call vLLM. `/health/ready` is 200 only when vLLM is healthy. `GET /metrics` is Prometheus text for this process. vLLM `/metrics` is scraped directly for the abort counter.
+
+```bash
+pip install -r serving/requirements.txt
+uvicorn serving.gateway.app:app --host 127.0.0.1 --port 8081
+python -m serving.clients.observability_probes --experiment idle --out-name idle
+```
+
+Experiments: `idle`, `known_load`, `overload`, `upstream_down`, `cancel`. See `experiments/v2/07_observability/README.md`.
+
+## Stage 8 — capacity and cost
+
+One container lifecycle: cold start, light warm load, sustained warm load, then idle until Modal scales the T4 to zero. Dollars come from `modal billing report` for `open-llm-v2-vllm` when that report moves.
+
+```bash
+python -m serving.clients.capacity_cost --out-name session
+```
+
+See `experiments/v2/08_capacity_cost/README.md`.
+
+## Stage 9 — production-readiness review
+
+No new load. The checklist cites the Phase 1–8 result files and states the users, load, and failures that review covers. See `experiments/v2/09_production_readiness/README.md`.
+
 Do not commit `.env`, tokens, endpoint URLs, or `results/v2/`.

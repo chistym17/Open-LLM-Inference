@@ -14,6 +14,7 @@ from serving.gateway.config import settings
 from serving.gateway.deadline import Deadline
 from serving.gateway.errors import map_upstream_error, request_deadline_error
 from serving.gateway.logging_util import log_event
+from serving.gateway.metrics import record_request, render, set_in_flight
 from serving.gateway.request_id import HEADER, resolve_request_id
 from serving.gateway.schemas import ChatRequest, ChatResponse
 from serving.gateway.streaming import proxy_chat_stream
@@ -32,7 +33,7 @@ async def lifespan(app: FastAPI):
         await client.aclose()
 
 
-app = FastAPI(title="open-llm-gateway", version="0.6.0", lifespan=lifespan)
+app = FastAPI(title="open-llm-gateway", version="0.7.0", lifespan=lifespan)
 
 
 @app.middleware("http")
@@ -44,9 +45,15 @@ async def attach_request_id(request: Request, call_next: Callable) -> Response:
     response.headers[HEADER] = request_id
     response.headers["X-Gateway-Ms"] = f"{(time.perf_counter() - t0) * 1000:.1f}"
     admission: AdmissionController = request.app.state.admission
+    set_in_flight(admission.in_flight)
     response.headers["X-In-Flight"] = str(admission.in_flight)
     response.headers["X-Max-In-Flight"] = str(admission.max_in_flight)
     return response
+
+
+async def _release(admission: AdmissionController) -> None:
+    await admission.release()
+    set_in_flight(admission.in_flight)
 
 
 def _input_size(messages: list[Any]) -> int:
@@ -65,6 +72,7 @@ def _validate_chat(body: ChatRequest, request_id: str) -> int:
             status=413,
             error_class="input_too_large",
         )
+        record_request(status=413, error_class="input_too_large", stream=False)
         raise HTTPException(
             status_code=413,
             detail=f"input exceeds {settings.max_input_chars} characters",
@@ -79,6 +87,7 @@ def _validate_chat(body: ChatRequest, request_id: str) -> int:
             status=400,
             error_class="validation_error",
         )
+        record_request(status=400, error_class="validation_error", stream=False)
         raise HTTPException(
             status_code=400,
             detail=f"max_tokens must be between 1 and {settings.max_tokens}",
@@ -96,6 +105,8 @@ def _reject_overload(request_id: str, admission: AdmissionController) -> None:
         in_flight=admission.in_flight,
         max_in_flight=admission.max_in_flight,
     )
+    set_in_flight(admission.in_flight)
+    record_request(status=429, error_class="admission_rejected", stream=False)
     raise HTTPException(
         status_code=429,
         detail="gateway at capacity",
@@ -125,6 +136,7 @@ async def validation_error_handler(
         status=422,
         error_class="validation_error",
     )
+    record_request(status=422, error_class="validation_error", stream=False)
     return JSONResponse(
         status_code=422,
         content={"detail": exc.errors(), "request_id": request_id},
@@ -136,13 +148,12 @@ async def validation_error_handler(
 async def health(request: Request) -> dict[str, Any]:
     client: VLLMClient = request.app.state.vllm
     admission: AdmissionController = request.app.state.admission
-    try:
-        status, _ = await client.health()
-        upstream_ok = status == 200
-    except UpstreamError:
-        upstream_ok = False
+    upstream_ok = await _upstream_ok(client)
+    set_in_flight(admission.in_flight)
     return {
         "status": "ok" if upstream_ok else "degraded",
+        "live": True,
+        "ready": upstream_ok,
         "gateway": "ok",
         "upstream": "ok" if upstream_ok else "down",
         "model": settings.model_name,
@@ -181,7 +192,7 @@ async def _stream_with_admission(
         ):
             yield chunk
     finally:
-        await admission.release()
+        await _release(admission)
 
 
 @app.post("/v1/chat/completions")
@@ -199,6 +210,8 @@ async def chat_completions(body: ChatRequest, request: Request):
         "max_tokens": max_tokens,
         "temperature": body.temperature,
     }
+    if body.min_tokens is not None:
+        payload["min_tokens"] = body.min_tokens
 
     client: VLLMClient = request.app.state.vllm
     log_event(
@@ -217,27 +230,41 @@ async def chat_completions(body: ChatRequest, request: Request):
         _reject_overload(request_id, admission)
 
     if deadline.expired():
-        await admission.release()
+        await _release(admission)
+        gateway_ms = round((time.perf_counter() - t0) * 1000, 1)
         log_event(
             "request_finished",
             request_id=request_id,
             status=504,
             error_class="request_deadline",
             stream=want_stream,
-            gateway_ms=round((time.perf_counter() - t0) * 1000, 1),
+            gateway_ms=gateway_ms,
+        )
+        record_request(
+            status=504,
+            error_class="request_deadline",
+            stream=want_stream,
+            latency_ms=gateway_ms,
         )
         raise request_deadline_error()
 
     hop_timeout = _hop_timeout_s(deadline)
     if hop_timeout <= 0:
-        await admission.release()
+        await _release(admission)
+        gateway_ms = round((time.perf_counter() - t0) * 1000, 1)
         log_event(
             "request_finished",
             request_id=request_id,
             status=504,
             error_class="request_deadline",
             stream=want_stream,
-            gateway_ms=round((time.perf_counter() - t0) * 1000, 1),
+            gateway_ms=gateway_ms,
+        )
+        record_request(
+            status=504,
+            error_class="request_deadline",
+            stream=want_stream,
+            latency_ms=gateway_ms,
         )
         raise request_deadline_error()
 
@@ -247,7 +274,7 @@ async def chat_completions(body: ChatRequest, request: Request):
                 payload, timeout_s=hop_timeout
             )
         except UpstreamError as exc:
-            await admission.release()
+            await _release(admission)
             # If overall deadline was the tighter bound, classify as deadline.
             if (
                 exc.status_code == 504
@@ -259,6 +286,7 @@ async def chat_completions(body: ChatRequest, request: Request):
             else:
                 http_exc = map_upstream_error(exc)
                 error_class = http_exc.headers.get("X-Error-Class", "upstream_error")
+            gateway_ms = round((time.perf_counter() - t0) * 1000, 1)
             log_event(
                 "stream_finished",
                 request_id=request_id,
@@ -267,9 +295,15 @@ async def chat_completions(body: ChatRequest, request: Request):
                 stream=True,
                 upstream_status=exc.status_code,
             )
+            record_request(
+                status=http_exc.status_code,
+                error_class=error_class,
+                stream=True,
+                latency_ms=gateway_ms,
+            )
             raise http_exc from exc
         except Exception:
-            await admission.release()
+            await _release(admission)
             raise
 
         return StreamingResponse(
@@ -293,7 +327,7 @@ async def chat_completions(body: ChatRequest, request: Request):
     try:
         result = await client.chat_completions(payload, timeout_s=hop_timeout)
     except UpstreamError as exc:
-        await admission.release()
+        await _release(admission)
         if (
             exc.status_code == 504
             and deadline.enabled
@@ -304,18 +338,25 @@ async def chat_completions(body: ChatRequest, request: Request):
         else:
             http_exc = map_upstream_error(exc)
             error_class = http_exc.headers.get("X-Error-Class", "upstream_error")
+        gateway_ms = round((time.perf_counter() - t0) * 1000, 1)
         log_event(
             "request_finished",
             request_id=request_id,
             status=http_exc.status_code,
             error_class=error_class,
             upstream_status=exc.status_code,
-            gateway_ms=round((time.perf_counter() - t0) * 1000, 1),
+            gateway_ms=gateway_ms,
             stream=False,
+        )
+        record_request(
+            status=http_exc.status_code,
+            error_class=error_class,
+            stream=False,
+            latency_ms=gateway_ms,
         )
         raise http_exc from exc
     except Exception:
-        await admission.release()
+        await _release(admission)
         raise
 
     try:
@@ -334,6 +375,12 @@ async def chat_completions(body: ChatRequest, request: Request):
                 gateway_ms=gateway_ms,
                 upstream_ms=result.duration_ms,
                 stream=False,
+            )
+            record_request(
+                status=502,
+                error_class="malformed_upstream",
+                stream=False,
+                latency_ms=gateway_ms,
             )
             raise HTTPException(
                 status_code=502,
@@ -356,6 +403,12 @@ async def chat_completions(body: ChatRequest, request: Request):
             stream=False,
             in_flight=admission.in_flight,
         )
+        record_request(
+            status=200,
+            error_class="ok",
+            stream=False,
+            latency_ms=gateway_ms,
+        )
 
         chat = ChatResponse(
             request_id=request_id,
@@ -373,4 +426,41 @@ async def chat_completions(body: ChatRequest, request: Request):
             headers={HEADER: request_id, "X-Gateway-Mode": "json"},
         )
     finally:
-        await admission.release()
+        await _release(admission)
+
+
+async def _upstream_ok(client: VLLMClient) -> bool:
+    try:
+        status, _ = await client.health()
+        return status == 200
+    except UpstreamError:
+        return False
+
+
+@app.get("/health/live")
+async def health_live() -> dict[str, Any]:
+    """Process is up. Does not call vLLM."""
+    return {"status": "ok", "live": True}
+
+
+@app.get("/health/ready")
+async def health_ready(request: Request) -> JSONResponse:
+    """Ready only when vLLM is reachable. In-flight at the cap is still ready."""
+    client: VLLMClient = request.app.state.vllm
+    admission: AdmissionController = request.app.state.admission
+    upstream_ok = await _upstream_ok(client)
+    set_in_flight(admission.in_flight)
+    body = {
+        "ready": upstream_ok,
+        "upstream": "ok" if upstream_ok else "down",
+        "model": settings.model_name,
+        **admission.snapshot(),
+    }
+    return JSONResponse(status_code=200 if upstream_ok else 503, content=body)
+
+
+@app.get("/metrics")
+async def metrics(request: Request) -> Response:
+    admission: AdmissionController = request.app.state.admission
+    set_in_flight(admission.in_flight)
+    return Response(content=render(), media_type="text/plain; version=0.0.4; charset=utf-8")

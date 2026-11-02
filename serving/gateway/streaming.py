@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 import json
 import time
 from collections.abc import AsyncIterator
@@ -9,6 +10,7 @@ from starlette.requests import Request
 
 from serving.gateway.deadline import Deadline
 from serving.gateway.logging_util import log_event
+from serving.gateway.metrics import record_request
 
 
 def _line_has_content(raw_line: str) -> bool:
@@ -69,6 +71,13 @@ async def proxy_chat_stream(
 
             # Re-emit as SSE line; blank line separates events.
             yield (line + "\n").encode()
+    except (asyncio.CancelledError, GeneratorExit):
+        # Client went away. Starlette cancels the body instead of letting
+        # is_disconnected() run on the next loop.
+        disconnected = True
+        error_class = "client_disconnected"
+        status = 499
+        raise
     except httpx.HTTPError:
         error_class = "upstream_error"
         status = 502
@@ -78,6 +87,20 @@ async def proxy_chat_stream(
         # This does not prove vLLM stopped GPU work — measure that separately.
         await upstream.aclose()
         total_ms = round((time.perf_counter() - t0) * 1000, 1)
+        metric_status = status
+        metric_class = error_class
+        if disconnected:
+            metric_status = 499
+            metric_class = "client_disconnected"
+        elif deadline_hit:
+            metric_status = 504
+            metric_class = "request_deadline"
+        record_request(
+            status=metric_status,
+            error_class=metric_class,
+            stream=True,
+            latency_ms=total_ms,
+        )
         log_event(
             "stream_finished",
             request_id=request_id,
